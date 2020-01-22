@@ -1,3 +1,57 @@
+<?php
+
+require_once "config.php"; 
+
+$username = $password = "";
+$passwordErr = $usernameErr = "";
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+  // checking if username is empty
+  if (empty(trim($_POST["username"]))) {
+    $usernameErr = "Please enter username";
+  } else {
+    $username = $_POST["username"];
+  }
+
+  // Checking if password is empty
+  if (empty(trim($_POST["password"]))) {
+    $passwordErr = "Please enter password";
+  } else {
+    $password = $_POST["password"];
+  }
+
+  if (empty($passwordErr) && empty($usernameErr)) {
+    $sql = "SELECT id, username, password from users where username = ?";
+    $stmt = mysqli_prepare($conn, $sql);
+    if ($stmt) {
+      mysqli_stmt_bind_param($stmt, "s", $usernameParam);
+      $usernameParam = $username;
+
+      if (mysqli_stmt_execute($stmt)) {
+        mysqli_stmt_store_result($stmt);
+        if (mysqli_stmt_num_rows($stmt) == 1) {
+          mysqli_stmt_bind_result($stmt, $id, $username, $hashedPassword);
+          if (mysqli_stmt_fetch($stmt)) {
+            if(password_verify($password, $hashedPassword)) {
+              header("location: welcome.php");
+            } else {
+              $passwordErr = "Incorrect Password";
+            }
+          }
+        } else {
+          $usernameErr = "Username doesnt exists";
+        } 
+      } else {
+        echo "Something went wrong!";
+      }
+    }
+    mysqli_stmt_close($stmt);
+  }
+  mysqli_close($conn);
+}
+?>
+
+
 <!doctype html>
 <html lang="en">
   <head>
@@ -25,60 +79,26 @@
         <li class="nav-item">
           <a class="nav-link" href="./register.php">Register</a>
         </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#">Contact Us</a>
-        </li>
       </ul>
     </div>
     </nav>
     <div class="container mt-4">
       <h3>Login Here</h3>
       <hr>
-      <form>
+      <form action="" method="POST">
         <div class="form-row">
-          <div class="form-group col-md-6">
-            <label for="inputEmail4">Email</label>
-            <input type="email" class="form-control" id="inputEmail4" placeholder="Email">
+          <div class="form-group col-md-12">
+            <label for="inputEmail4">Username</label>
+            <input name="username" type="text" class="form-control" id="inputEmail4" placeholder="Email">
+            <span class="text-danger"><?php echo $usernameErr;?></span>
           </div>
-          <div class="form-group col-md-6">
+          <div class="form-group col-md-12">
             <label for="inputPassword4">Password</label>
-            <input type="password" class="form-control" id="inputPassword4" placeholder="Password">
+            <input name="password" type="password" class="form-control" id="inputPassword4" placeholder="Password">
+            <span class="text-danger"><?php echo $passwordErr;?></span>
           </div>
         </div>
-        <div class="form-group">
-          <label for="inputAddress">Address</label>
-          <input type="text" class="form-control" id="inputAddress" placeholder="1234 Main St">
-        </div>
-        <div class="form-group">
-          <label for="inputAddress2">Address 2</label>
-          <input type="text" class="form-control" id="inputAddress2" placeholder="Apartment, studio, or floor">
-        </div>
-        <div class="form-row">
-          <div class="form-group col-md-6">
-            <label for="inputCity">City</label>
-            <input type="text" class="form-control" id="inputCity">
-          </div>
-          <div class="form-group col-md-4">
-            <label for="inputState">State</label>
-            <select id="inputState" class="form-control">
-              <option selected>Choose...</option>
-              <option>...</option>
-            </select>
-          </div>
-          <div class="form-group col-md-2">
-            <label for="inputZip">Zip</label>
-            <input type="text" class="form-control" id="inputZip">
-          </div>
-        </div>
-        <div class="form-group">
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="gridCheck">
-            <label class="form-check-label" for="gridCheck">
-              Check me out
-            </label>
-          </div>
-        </div>
-        <button type="submit" class="btn btn-primary">Sign in</button>
+        <button type="submit" class="btn btn-primary">Log In</button>
       </form>
     </div>
 
